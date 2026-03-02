@@ -781,7 +781,15 @@ MANAGEMENT (use action field — omit agent/task/chain/tasks):
 				}
 
 				const cleanTask = task;
-				const outputPath = resolveSingleOutputPath(effectiveOutput, ctx.cwd, params.cwd);
+				const outputPath = resolveSingleOutputPath(
+					effectiveOutput,
+					ctx.cwd,
+					params.cwd,
+					// Restrict output to safe roots to prevent prompt-injection attacks
+					// that supply absolute paths like /etc or ~/.ssh as the output location.
+					// Relative paths (most common) resolve against cwd and are always safe.
+					[ctx.cwd, params.cwd ?? ctx.cwd, os.tmpdir()],
+				);
 				task = injectSingleOutputInstruction(task, outputPath);
 
 				const effectiveSkills = skillOverride === false

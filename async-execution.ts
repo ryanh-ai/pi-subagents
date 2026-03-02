@@ -160,7 +160,12 @@ export function executeAsyncChain(
 
 		// Resolve output path and inject instruction into task
 		// Use step's cwd if specified, otherwise fall back to chain-level cwd
-		const outputPath = resolveSingleOutputPath(s.output, ctx.cwd, s.cwd ?? cwd);
+		const outputPath = resolveSingleOutputPath(
+			s.output,
+			ctx.cwd,
+			s.cwd ?? cwd,
+			[ctx.cwd, s.cwd ?? cwd, cwd, os.tmpdir()],
+		);
 		const task = injectSingleOutputInstruction(s.task ?? "{previous}", outputPath);
 
 		return {
@@ -273,7 +278,12 @@ export function executeAsyncSingle(
 	} catch {}
 
 	const runnerCwd = cwd ?? ctx.cwd;
-	const outputPath = resolveSingleOutputPath(params.output, ctx.cwd, cwd);
+	const outputPath = resolveSingleOutputPath(
+		params.output,
+		ctx.cwd,
+		cwd,
+		[ctx.cwd, cwd ?? ctx.cwd, os.tmpdir()],
+	);
 	const taskWithOutputInstruction = injectSingleOutputInstruction(task, outputPath);
 	const pid = spawnRunner(
 		{

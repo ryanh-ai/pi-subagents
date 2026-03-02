@@ -287,8 +287,12 @@ export function resolveParallelBehaviors(
 			throw new Error(`Unknown agent: ${task.agent}`);
 		}
 
-		// Build subdirectory path for this parallel task
-		const subdir = path.join(`parallel-${stepIndex}`, `${taskIndex}-${task.agent}`);
+		// Build subdirectory path for this parallel task.
+		// Sanitize agent name to prevent path traversal: an agent named "../../etc"
+		// would cause path.join to escape chainDir when this relative subdir is
+		// later resolved against it in chain-execution.ts.
+		const safeAgent = task.agent.replace(/[^a-zA-Z0-9_\-]/g, "_");
+		const subdir = path.join(`parallel-${stepIndex}`, `${taskIndex}-${safeAgent}`);
 
 		// Output: task override > agent default (namespaced) > false
 		// Absolute paths pass through unchanged; relative paths get namespaced under subdir
