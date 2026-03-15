@@ -316,6 +316,10 @@ async function runSingleStep(
 		args.push("--tools", coreRequestedTools.join(","));
 	}
 
+	if (step.skills?.length) {
+		args.push("--no-skills");
+	}
+
 	let tmpDir: string | null = null;
 	if (step.systemPrompt) {
 		tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-subagent-"));
