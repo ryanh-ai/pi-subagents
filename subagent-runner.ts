@@ -286,22 +286,34 @@ async function runSingleStep(
 	if (step.model) args.push("--models", step.model);
 
 	const toolExtensionPaths: string[] = [];
+	const requestedTools: string[] = [];
 	if (step.tools?.length) {
-		const builtinTools: string[] = [];
 		for (const tool of step.tools) {
 			if (tool.includes("/") || tool.endsWith(".ts") || tool.endsWith(".js")) {
 				toolExtensionPaths.push(tool);
 			} else {
-				builtinTools.push(tool);
+				requestedTools.push(tool);
 			}
 		}
-		if (builtinTools.length > 0) args.push("--tools", builtinTools.join(","));
 	}
+	// Important: load extensions before --tools so extension-provided tools
+	// (e.g. web_search/fetch_content) are registered before tool validation.
 	if (step.extensions !== undefined) {
 		args.push("--no-extensions");
 		for (const extPath of step.extensions) args.push("--extension", extPath);
 	} else {
 		for (const extPath of toolExtensionPaths) args.push("--extension", extPath);
+	}
+	// In interactive mode (-p), pi may reject extension tool names in --tools
+	// as "Unknown tool". Keep strict filtering for core tools, but omit
+	// extension-provided tool names from --tools so they can load via --extension.
+	const CORE_TOOLS = new Set([
+		"read", "bash", "edit", "write", "grep", "find", "ls", "mcp",
+		"subagent", "subagent_status",
+	]);
+	const coreRequestedTools = requestedTools.filter((t) => CORE_TOOLS.has(t));
+	if (coreRequestedTools.length > 0) {
+		args.push("--tools", coreRequestedTools.join(","));
 	}
 
 	let tmpDir: string | null = null;
